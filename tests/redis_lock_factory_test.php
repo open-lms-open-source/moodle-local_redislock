@@ -14,15 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use core\lock\lock_config;
-
 /**
  * Unit tests for \local_redislock\lock\redis_lock_factory.
  *
- * @package    local_redislock
- * @author     Sam Chaffee
- * @copyright  2015 Moodlerooms, Inc.
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   local_redislock
+ * @author    Sam Chaffee
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+use core\lock\lock_config;
+
+/**
+ * PHPUnit testcase class for \local_redislock\lock\redis_lock_factory.
+ *
+ * @package   local_redislock
+ * @author    Sam Chaffee
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 class local_redislock_redis_lock_factory_test extends \advanced_testcase {
@@ -35,7 +46,12 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $CFG->lock_factory = '\\local_redislock\\lock\\redis_lock_factory';
     }
 
-    public function test_aquire_lock() {
+    /**
+     * Tests acquiring locks using the Redis lock factory.
+     *
+     * @throws coding_exception
+     */
+    public function test_acquire_lock() {
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
         }
@@ -60,6 +76,11 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $this->assertTrue($lock3->release());
     }
 
+    /**
+     * Tests extending a lock's TTL using Redis lock factory.
+     *
+     * @throws coding_exception
+     */
     public function test_lock_extendttl() {
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
@@ -77,6 +98,11 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $lock1->release();
     }
 
+    /**
+     * Tests auto_release method of the Redis lock factory.
+     *
+     * @throws coding_exception
+     */
     public function test_lock_autorelease() {
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
@@ -95,6 +121,11 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $redislockfactory->auto_release();
     }
 
+    /**
+     * Tests that timeout on acquiring lock works with Redis lock factory.
+     *
+     * @throws coding_exception
+     */
     public function test_lock_timeout() {
         $redis = $this->getMockBuilder('Redis')
             ->setMethods(array('setnx'))
@@ -116,6 +147,13 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $this->assertGreaterThanOrEqual(3, $endtime - $starttime);
     }
 
+    /**
+     * Helper method to determine whether a Redis server is available to run these tests.
+     * If LOCAL_REDISLOCK_REDIS_LOCK_TEST is not true most of these tests will be skipped.
+     *
+     * @uses LOCAL_REDISLOCK_REDIS_LOCK_TEST
+     * @return bool
+     */
     protected function is_redis_available() {
         return defined('LOCAL_REDISLOCK_REDIS_LOCK_TEST') && LOCAL_REDISLOCK_REDIS_LOCK_TEST;
     }

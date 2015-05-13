@@ -17,10 +17,10 @@
 /**
  * Version file for Redis Lock plugin.
  *
- * @package    local_redislock
- * @author     Sam Chaffee
- * @copyright  2015 Moodlerooms, Inc.
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   local_redislock
+ * @author    Sam Chaffee
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
 

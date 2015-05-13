@@ -17,33 +17,49 @@
 /**
  * Redis-backed lock factory.
  *
- * @package    local_redislock
- * @author     Sam Chaffee
- * @copyright  2015 Moodlerooms, Inc.
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   local_redislock
+ * @author    Sam Chaffee
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace local_redislock\lock;
 
+defined('MOODLE_INTERNAL') || die();
+
 use core\lock\lock_factory;
 use core\lock\lock;
 
+/**
+ * Redis-backed lock factory class.
+ *
+ * @package   local_redislock
+ * @author    Sam Chaffee
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 class redis_lock_factory implements lock_factory {
     /**
-     * @var \Redis
+     * @var \Redis An instance of the PHPRedis extension class.
      */
     protected $redis;
 
     /**
-     * @var string
+     * @var string The type this lock is used for (e.g. cron, cache).
      */
     protected $type;
 
     /**
-     * @var array
+     * @var array Keeps track of open locks to be closed on shutdown if not properly closed.
      */
     protected $openlocks = [];
 
+    /**
+     * @param string $type The type this lock is used for (e.g. cron, cache).
+     * @param \Redis $redis An instance of the PHPRedis extension class.
+     * @throws \coding_exception
+     */
     public function __construct($type, \Redis $redis = null) {
         $this->type = $type;
 
@@ -56,38 +72,51 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
-     * @return bool
+     * Is this lock factory available.
+     *
+     * @return boolean True if this lock type is available in this environment.
      */
     public function is_available() {
         return $this->redis instanceof \Redis;
     }
 
     /**
-     * @return bool
+     * Return information about the blocking behaviour of the locks on this platform.
+     *
+     * @return boolean False if attempting to get a lock will block indefinitely.
      */
     public function supports_timeout() {
         return true;
     }
 
     /**
-     * @return bool
+     * Will this lock be automatically released when the process ends.
+     * This should never be relied upon in code - but is useful in the case of
+     * fatal errors. If a lock type does not support this auto release,
+     * the max lock time parameter must be obeyed to eventually clean up a lock.
+     *
+     * @return boolean True if this lock type will be automatically released when the current process ends.
      */
     public function supports_auto_release() {
         return true;
     }
 
     /**
-     * @return bool
+     * Supports recursion.
+     *
+     * @return boolean True if attempting to get 2 locks on the same resource will "stack"
      */
     public function supports_recursion() {
         return false;
     }
 
     /**
-     * @param string $resource
-     * @param int    $timeout
-     * @param int    $maxlifetime
-     * @return bool|lock
+     * Get a lock within the specified timeout or return false.
+     *
+     * @param string $resource The identifier for the lock. Should use frankenstyle prefix.
+     * @param int    $timeout The number of seconds to wait for a lock before giving up.
+     * @param int    $maxlifetime The number of seconds to wait before reclaiming a stale lock.
+     * @return lock|boolean An instance of \core\lock\lock if the lock was obtained, or false.
      * @throws \coding_exception
      */
     public function get_lock($resource, $timeout, $maxlifetime = 86400) {
@@ -127,8 +156,10 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
-     * @param lock $lock
-     * @return bool
+     * Release a lock that was previously obtained with @get_lock.
+     *
+     * @param lock $lock The lock to release.
+     * @return boolean True if the lock is no longer held (including if it was never held).
      */
     public function release_lock(lock $lock) {
         $resource = $lock->get_key();
@@ -154,9 +185,11 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
-     * @param lock $lock
-     * @param int  $maxlifetime
-     * @return bool
+     * Extend the timeout on a held lock.
+     *
+     * @param lock $lock lock obtained from this factory.
+     * @param int  $maxlifetime new max time to hold the lock.
+     * @return boolean True if the lock was extended.
      */
     public function extend_lock(lock $lock, $maxlifetime = 86400) {
         $resource = $lock->get_key();
@@ -184,6 +217,8 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
+     * Returns the TTL for a lock.
+     *
      * @param lock $lock
      * @return int
      */
@@ -193,6 +228,8 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
+     * Bootstraps a \Redis instance.
+     *
      * @return \Redis
      * @throws \coding_exception
      */
@@ -217,6 +254,8 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
+     * Returns the hostname or 'UNKNOWN' for use in the lock value.
+     *
      * @return string
      */
     protected function get_hostname() {
@@ -227,7 +266,7 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
-     * Get the value that should be used for the lock
+     * Get the value that should be used for the lock.
      *
      * @return string
      */
