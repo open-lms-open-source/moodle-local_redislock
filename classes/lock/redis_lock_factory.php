@@ -56,17 +56,27 @@ class redis_lock_factory implements lock_factory {
     protected $openlocks = [];
 
     /**
+     * @var boolean Enables logging
+     */
+    protected $logging;
+
+    /**
      * @param string $type The type this lock is used for (e.g. cron, cache).
-     * @param \Redis $redis An instance of the PHPRedis extension class.
+     * @param \Redis|null $redis An instance of the PHPRedis extension class.
+     * @param boolean|null $logging Enables logging
      * @throws \coding_exception
      */
-    public function __construct($type, \Redis $redis = null) {
+    public function __construct($type, \Redis $redis = null, $logging = null) {
         $this->type = $type;
 
         if (is_null($redis)) {
             $redis = $this->bootstrap_redis();
         }
-        $this->redis = $redis;
+        if (is_null($logging)) {
+            $logging = (CLI_SCRIPT && debugging() && !PHPUNIT_TEST);
+        }
+        $this->redis   = $redis;
+        $this->logging = $logging;
 
         \core_shutdown_manager::register_function(array($this, 'auto_release'));
     }
@@ -137,6 +147,8 @@ class redis_lock_factory implements lock_factory {
             $resource = $CFG->dbname . '_' . $resource;
         }
 
+        $this->log('Waiting to get '.$resource.' lock');
+
         do {
             $now = time();
             $locked = $this->redis->setnx($resource, $this->get_lock_value());
@@ -146,10 +158,13 @@ class redis_lock_factory implements lock_factory {
         } while (!$locked && $now < $giveuptime);
 
         if ($locked) {
+            $this->log('Obtained '.$resource.' lock with value '.$this->get_lock_value());
+
             $lock = new lock($resource, $this);
             $this->openlocks[$resource] = $lock;
             return $lock;
         }
+        $this->log('Lock timeout, did not obtain '.$resource.' lock');
 
         return false;
     }
@@ -167,12 +182,21 @@ class redis_lock_factory implements lock_factory {
             if ($value == $this->get_lock_value()) {
                 // This is the process' lock, release it.
                 $unlocked = $this->redis->del($resource);
+
+                if ($unlocked) {
+                    $this->log('Released '.$resource.' lock');
+                } else {
+                    $this->log('Failed to release '.$resource.' lock');
+                }
             } else {
                 // Don't release another process' lock.
+                $this->log('Tried to release '.$resource.' lock, but key value belongs to another process; Expected '.
+                    $this->get_lock_value().' but got '.$value);
                 $unlocked = false;
             }
         } else {
             // Never held that lock or it's already released.
+            $this->log('Tried to release '.$resource.' lock, but key does not exist in Redis anymore');
             $unlocked = true;
         }
 
@@ -198,6 +222,8 @@ class redis_lock_factory implements lock_factory {
      * Auto release any open locks on shutdown.
      */
     public function auto_release() {
+        $this->log('Auto-release called, releasing '.count($this->openlocks).' locks');
+
         // Called from the shutdown handler. Must release all open locks.
         /** @var lock $lock */
         foreach ($this->openlocks as $lock) {
@@ -242,6 +268,17 @@ class redis_lock_factory implements lock_factory {
         }
 
         return $redis;
+    }
+
+    /**
+     * Log message
+     *
+     * @param $message
+     */
+    protected function log($message) {
+        if ($this->logging) {
+            mtrace(sprintf('Redis lock; pid=%d; %s', getmypid(), $message));
+        }
     }
 
     /**
