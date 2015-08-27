@@ -56,9 +56,11 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
             $this->markTestSkipped('Redis server not available');
         }
 
+        /** @var local_redislock\lock\redis_lock_factory $redislockfactory */
         $redislockfactory = lock_config::get_lock_factory('core_cron');
         $lock1 = $redislockfactory->get_lock('test', 10);
         $this->assertNotEmpty($lock1);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock1));
 
         $lock2 = $redislockfactory->get_lock('test', 10);
         $this->assertEmpty($lock2);
@@ -67,12 +69,14 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
 
         $lock3 = $redislockfactory->get_lock('another_test', 2, 2);
         $this->assertNotEmpty($lock3);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock3));
+
         sleep(3);
 
+        // Not using TTL anymore so this should fail to acquire the lock.
         $lock4 = $redislockfactory->get_lock('another_test', 2);
-        $this->assertNotEmpty($lock4);
+        $this->assertEmpty($lock4);
 
-        $this->assertTrue($lock4->release());
         $this->assertTrue($lock3->release());
     }
 
@@ -90,10 +94,10 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $redislockfactory = lock_config::get_lock_factory('conduit_cron');
         $lock1 = $redislockfactory->get_lock('test', 10, 200);
         $this->assertNotEmpty($lock1);
-        $this->assertTrue($lock1->extend(10000));
+        $this->assertFalse($lock1->extend(10000));
 
         $newttl = $redislockfactory->get_ttl($lock1);
-        $this->assertGreaterThanOrEqual(9990, $newttl);
+        $this->assertEquals(-1, $newttl);
 
         $lock1->release();
     }

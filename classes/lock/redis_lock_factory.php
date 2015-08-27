@@ -139,9 +139,8 @@ class redis_lock_factory implements lock_factory {
 
         do {
             $now = time();
-            if ($locked = $this->redis->setnx($resource, $this->get_lock_value())) {
-                $this->redis->expire($resource, $maxlifetime);
-            } else {
+            $locked = $this->redis->setnx($resource, $this->get_lock_value());
+            if (!$locked) {
                 usleep(rand(10000, 250000)); // Sleep between 10 and 250 milliseconds.
             }
         } while (!$locked && $now < $giveuptime);
@@ -192,15 +191,7 @@ class redis_lock_factory implements lock_factory {
      * @return boolean True if the lock was extended.
      */
     public function extend_lock(lock $lock, $maxlifetime = 86400) {
-        $resource = $lock->get_key();
-        $extended = false;
-        if ($value = $this->redis->get($resource)) {
-            if ($value == $this->get_lock_value()) {
-                $extended = $this->redis->expire($resource, $maxlifetime);
-            }
-        }
-
-        return $extended;
+        return false;
     }
 
     /**
