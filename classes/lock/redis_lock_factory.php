@@ -251,7 +251,7 @@ class redis_lock_factory implements lock_factory {
      */
     protected function get_hostname() {
         if (($hostname = gethostname()) === false) {
-            $hostname = 'UNKOWN';
+            $hostname = 'UNKNOWN';
         }
         return $hostname;
     }
