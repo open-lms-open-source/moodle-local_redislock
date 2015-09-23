@@ -36,14 +36,12 @@ install:
   - moodle-plugin-ci install
   - moodle-plugin-ci add-config '$CFG->local_redislock_redis_server = "tcp://127.0.0.1";'
   - moodle-plugin-ci add-config 'define("LOCAL_REDISLOCK_REDIS_LOCK_TEST", "true");'
+  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 script:
   - moodle-plugin-ci phplint
   - moodle-plugin-ci phpcpd
   - moodle-plugin-ci phpmd
   - moodle-plugin-ci codechecker
-  - moodle-plugin-ci csslint
-  - moodle-plugin-ci shifter
-  - moodle-plugin-ci jshint
   - moodle-plugin-ci phpunit
   - moodle-plugin-ci behat
