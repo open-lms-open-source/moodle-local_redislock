@@ -78,7 +78,9 @@ class redis_lock_factory implements lock_factory {
         $this->redis   = $redis;
         $this->logging = $logging;
 
-        \core_shutdown_manager::register_function(array($this, 'auto_release'));
+        if (!PHPUNIT_TEST) {
+            \core_shutdown_manager::register_function(array($this, 'auto_release'));
+        }
     }
 
     /**
