@@ -58,20 +58,18 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
 
         /** @var local_redislock\lock\redis_lock_factory $redislockfactory */
         $redislockfactory = lock_config::get_lock_factory('core_cron');
-        $lock1 = $redislockfactory->get_lock('test', 10);
+        $lock1 = $redislockfactory->get_lock('test', 2);
         $this->assertNotEmpty($lock1);
         $this->assertEquals(-1, $redislockfactory->get_ttl($lock1));
 
-        $lock2 = $redislockfactory->get_lock('test', 10);
+        $lock2 = $redislockfactory->get_lock('test', 1);
         $this->assertEmpty($lock2);
 
         $this->assertTrue($lock1->release());
 
-        $lock3 = $redislockfactory->get_lock('another_test', 2, 2);
+        $lock3 = $redislockfactory->get_lock('another_test', 2, 1);
         $this->assertNotEmpty($lock3);
         $this->assertEquals(-1, $redislockfactory->get_ttl($lock3));
-
-        sleep(3);
 
         // Not using TTL anymore so this should fail to acquire the lock.
         $lock4 = $redislockfactory->get_lock('another_test', 2);
