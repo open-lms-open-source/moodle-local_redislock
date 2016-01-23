@@ -256,7 +256,8 @@ class redis_lock_factory implements lock_factory {
         global $CFG;
 
         if (!class_exists('Redis')) {
-            throw new \coding_exception('Redis class not found, Redis PHP Extension is probably not installed on host: ' . $this->get_hostname());
+            throw new \coding_exception('Redis class not found, Redis PHP Extension is probably not installed on host: '
+                    . $this->get_hostname());
         }
         if (empty($CFG->local_redislock_redis_server)) {
             throw new \coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
