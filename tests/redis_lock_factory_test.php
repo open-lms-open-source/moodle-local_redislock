@@ -42,7 +42,9 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         global $CFG;
 
         $this->resetAfterTest();
-        $CFG->local_redislock_redis_server = !empty($CFG->local_redislock_redis_server) ? $CFG->local_redislock_redis_server : 'tcp://127.0.0.1';
+        if (empty($CFG->local_redislock_redis_server)) {
+            $CFG->local_redislock_redis_server = 'tcp://127.0.0.1';
+        }
         $CFG->lock_factory = '\\local_redislock\\lock\\redis_lock_factory';
     }
 
@@ -56,23 +58,25 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
             $this->markTestSkipped('Redis server not available');
         }
 
+        /** @var local_redislock\lock\redis_lock_factory $redislockfactory */
         $redislockfactory = lock_config::get_lock_factory('core_cron');
-        $lock1 = $redislockfactory->get_lock('test', 10);
+        $lock1 = $redislockfactory->get_lock('test', 2);
         $this->assertNotEmpty($lock1);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock1));
 
-        $lock2 = $redislockfactory->get_lock('test', 10);
+        $lock2 = $redislockfactory->get_lock('test', 1);
         $this->assertEmpty($lock2);
 
         $this->assertTrue($lock1->release());
 
-        $lock3 = $redislockfactory->get_lock('another_test', 2, 2);
+        $lock3 = $redislockfactory->get_lock('another_test', 2, 1);
         $this->assertNotEmpty($lock3);
-        sleep(3);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock3));
 
+        // Not using TTL anymore so this should fail to acquire the lock.
         $lock4 = $redislockfactory->get_lock('another_test', 2);
-        $this->assertNotEmpty($lock4);
+        $this->assertEmpty($lock4);
 
-        $this->assertTrue($lock4->release());
         $this->assertTrue($lock3->release());
     }
 
@@ -90,10 +94,10 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $redislockfactory = lock_config::get_lock_factory('conduit_cron');
         $lock1 = $redislockfactory->get_lock('test', 10, 200);
         $this->assertNotEmpty($lock1);
-        $this->assertTrue($lock1->extend(10000));
+        $this->assertFalse($lock1->extend(10000));
 
         $newttl = $redislockfactory->get_ttl($lock1);
-        $this->assertGreaterThanOrEqual(9990, $newttl);
+        $this->assertEquals(-1, $newttl);
 
         $lock1->release();
     }
@@ -116,7 +120,7 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $lock2 = $redislockfactory->get_lock('another_test', 10, 200);
         $this->assertNotEmpty($lock2);
 
-        // core\lock\lock has a __destruct method that throws a coding exception if the lock wasn't released.
+        // Class core\lock\lock has a __destruct method that throws a coding exception if the lock wasn't released.
         // The test fails when that happens. Simulate the auto-release being called by the shutdown manager.
         $redislockfactory->auto_release();
     }
@@ -127,17 +131,12 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_timeout() {
-        $redis = $this->getMockBuilder('Redis')
-            ->setMethods(array('setnx'))
-            ->disableOriginalConstructor()
-            ->getMock();
+        $mockbuilder = $this->getMockBuilder('Redis')->setMethods(array('setnx'))->disableOriginalConstructor();
+        $redis = $mockbuilder->getMock();
 
         $redislockfactory = new \local_redislock\lock\redis_lock_factory('cron', $redis);
 
-
-        $redis->expects($this->atLeastOnce())
-            ->method('setnx')
-            ->will($this->returnValue(false));
+        $redis->expects($this->atLeastOnce())->method('setnx')->will($this->returnValue(false));
 
         $starttime = time();
         $timedoutlock = $redislockfactory->get_lock('block_conduit', 3);
