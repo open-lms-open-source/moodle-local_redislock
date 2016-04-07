@@ -51,7 +51,7 @@ class redis_lock_factory implements lock_factory {
     protected $type;
 
     /**
-     * @var array Keeps track of open locks to be closed on shutdown if not properly closed.
+     * @var lock[] Keeps track of open locks to be closed on shutdown if not properly closed.
      */
     protected $openlocks = [];
 
@@ -227,7 +227,6 @@ class redis_lock_factory implements lock_factory {
         $this->log('Auto-release called, releasing '.count($this->openlocks).' locks');
 
         // Called from the shutdown handler. Must release all open locks.
-        /** @var lock $lock */
         foreach ($this->openlocks as $lock) {
             $lock->release();
         }
