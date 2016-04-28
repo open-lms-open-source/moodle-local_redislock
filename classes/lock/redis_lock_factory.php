@@ -154,7 +154,7 @@ class redis_lock_factory implements lock_factory {
         do {
             $now = time();
             $locked = $this->redis->setnx($resource, $this->get_lock_value());
-            if (!$locked) {
+            if (!$locked && $timeout !== 0) {
                 usleep(rand(500000, 1000000)); // Sleep between 0.5 and 1 second.
             }
         } while (!$locked && $now < $giveuptime);
