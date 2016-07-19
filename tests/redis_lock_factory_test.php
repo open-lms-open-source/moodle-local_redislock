@@ -147,6 +147,22 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
     }
 
     /**
+     * Tests that there are no retries or sleeping when the timeout is zero.
+     *
+     * @throws coding_exception
+     */
+    public function test_lock_zero_timeout() {
+        $redis   = $this->getMockBuilder('Redis')->setMethods(array('setnx'))->disableOriginalConstructor()->getMock();
+        $redis->expects($this->once())->method('setnx')->will($this->returnValue(false));
+
+        $factory = new \local_redislock\lock\redis_lock_factory('cron', $redis);
+
+        $start = microtime(true);
+        $this->assertFalse($factory->get_lock('block_conduit', 0));
+        $this->assertLessThan(.5, microtime(true) - $start);
+    }
+
+    /**
      * Helper method to determine whether a Redis server is available to run these tests.
      * If LOCAL_REDISLOCK_REDIS_LOCK_TEST is not true most of these tests will be skipped.
      *
