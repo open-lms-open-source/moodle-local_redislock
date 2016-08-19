@@ -10,7 +10,7 @@ cache:
     - $HOME/.composer/cache
 
 php:
- - 5.5
+# - 5.5
  - 7.0
 
 env:
@@ -18,7 +18,7 @@ env:
   - MOODLE_BRANCH=MOODLE_31_STABLE
  matrix:
   - DB=pgsql
-  - DB=mysqli
+#  - DB=mysqli
 
 before_install:
   - phpenv config-rm xdebug.ini
@@ -32,6 +32,8 @@ install:
   - moodle-plugin-ci add-config '$CFG->local_redislock_redis_server = "localhost";'
   - moodle-plugin-ci add-config 'define("LOCAL_REDISLOCK_REDIS_LOCK_TEST", "true");'
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - redis-cli ping
+  - redis-cli -h 127.0.0.1 -p 6379 ping
 
 script:
   - moodle-plugin-ci phplint
