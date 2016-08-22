@@ -30,9 +30,8 @@ before_install:
 
 install:
   - moodle-plugin-ci install
-  - moodle-plugin-ci add-config '$CFG->local_redislock_redis_server = "localhost";'
+#  - moodle-plugin-ci add-config '$CFG->local_redislock_redis_server = "localhost";'
   - moodle-plugin-ci add-config 'define("LOCAL_REDISLOCK_REDIS_LOCK_TEST", "true");'
-  - php moodle/admin/cli/purge_caches.php
   - redis-cli ping
   - redis-cli -h 127.0.0.1 -p 6379 ping
 
