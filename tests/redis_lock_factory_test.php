@@ -43,7 +43,7 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
 
         $this->resetAfterTest();
         if (empty($CFG->local_redislock_redis_server)) {
-            $CFG->local_redislock_redis_server = 'tcp://127.0.0.1';
+            $CFG->local_redislock_redis_server = '127.0.0.1';
         }
         $CFG->lock_factory = '\\local_redislock\\lock\\redis_lock_factory';
     }
