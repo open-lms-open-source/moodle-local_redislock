@@ -151,13 +151,31 @@ class redis_lock_factory implements lock_factory {
 
         $this->log('Waiting to get '.$resource.' lock');
 
+        $exception = false;
+        $locked = false;
         do {
             $now = time();
-            $locked = $this->redis->setnx($resource, $this->get_lock_value());
+            try {
+                $locked = $this->redis->setnx($resource, $this->get_lock_value());
+                $exception = false;
+            } catch (\RedisException $e) {
+                // If there has been a redis exception, we will try to reconnect.
+                $exception = $e;
+                $this->log("Got exception while trying to get lock: {$e->getMessage()}");
+                $this->log("Attempting to reconnect to Redis");
+                $this->redis = $this->bootstrap_redis();
+            }
+
             if (!$locked && $timeout !== 0) {
                 usleep(rand(500000, 1000000)); // Sleep between 0.5 and 1 second.
             }
         } while (!$locked && $now < $giveuptime);
+
+        if (!$locked && $exception) {
+            // Error and return.
+            $this->log("Could not get lock on {$resource}. Got exception while trying: {$e->getMessage()}");
+            return false;
+        }
 
         if ($locked) {
             $this->log('Obtained '.$resource.' lock with value '.$this->get_lock_value());
@@ -180,7 +198,31 @@ class redis_lock_factory implements lock_factory {
     public function release_lock(lock $lock) {
         $resource = $lock->get_key();
 
-        if ($value = $this->redis->get($resource)) {
+        // We will retry connecting and releasing up to 5 times.
+        $failcount = 0;
+        $value = false;
+        do {
+            $exception = false;
+            try {
+                $value = $this->redis->get($resource);
+            } catch (\RedisException $e) {
+                $exception = true;
+                $failcount++;
+                if ($failcount >= 5) {
+                    throw $e;
+                }
+
+                // If there has been a redis exception, we will try to reconnect.
+                $this->log("Got exception while trying to release lock: {$e->getMessage()}");
+                $this->log('Attempting to reconnect to Redis');
+                $this->redis = $this->bootstrap_redis();
+
+                // Sleep the loop for a bit so we don't spam connections.
+                usleep(rand(500000, 1000000));
+            }
+        } while ($exception);
+
+        if ($value) {
             if ($value == $this->get_lock_value()) {
                 // This is the process' lock, release it.
                 $unlocked = $this->redis->del($resource);
