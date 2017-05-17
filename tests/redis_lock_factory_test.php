@@ -78,6 +78,33 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $this->assertEmpty($lock4);
 
         $this->assertTrue($lock3->release());
+
+        // Now try some interesting keys.
+        $key1 = "\\A\\key_with!odd:Chars$^\\A newline\n\\1\\And unicode ☀↑!";
+        $key2 = "\\A\\key_with!odd:Chars$^\\A newline\n\\2\\And unicode ☀↑!";
+        $lock5 = $redislockfactory->get_lock($key1, 2);
+        $this->assertNotEmpty($lock5);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock5));
+
+        // This key should also aquire.
+        $lock6 = $redislockfactory->get_lock($key2, 2);
+        $this->assertNotEmpty($lock6);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock6));
+
+        // But this should not (already held).
+        $lock7 = $redislockfactory->get_lock($key1, 2);
+        $this->assertEmpty($lock7);
+
+        $this->assertTrue($lock5->release());
+        $this->assertTrue($lock6->release());
+
+        // Now get lock 2 again to be sure we had released.
+        // This key should also aquire.
+        $lock8 = $redislockfactory->get_lock($key2, 2);
+        $this->assertNotEmpty($lock8);
+        $this->assertEquals(-1, $redislockfactory->get_ttl($lock8));
+
+        $this->assertTrue($lock8->release());
     }
 
     /**

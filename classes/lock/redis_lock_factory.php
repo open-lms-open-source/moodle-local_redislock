@@ -129,19 +129,12 @@ class redis_lock_factory implements lock_factory {
      * @param int    $timeout The number of seconds to wait for a lock before giving up.
      * @param int    $maxlifetime The number of seconds to wait before reclaiming a stale lock.
      * @return lock|boolean An instance of \core\lock\lock if the lock was obtained, or false.
-     * @throws \coding_exception
      */
     public function get_lock($resource, $timeout, $maxlifetime = 86400) {
         global $CFG;
         $giveuptime = time() + $timeout;
 
         $resource = $this->type . '_' . $resource;
-        $resource = clean_param($resource, PARAM_ALPHAEXT);
-        $resource = clean_param($resource, PARAM_FILE);
-
-        if (empty($resource)) {
-            throw new \coding_exception('Passed unique key is empty (after cleaning)');
-        }
 
         if (!empty($CFG->MR_SHORT_NAME)) {
             $resource = $CFG->MR_SHORT_NAME . '_' . $resource;
