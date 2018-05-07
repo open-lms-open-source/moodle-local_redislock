@@ -25,3 +25,4 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Redis lock';
+$string['privacy:metadata'] = 'The Redis lock plugin does not store any personal data.';
