@@ -29,4 +29,4 @@ $plugin->version   = 2017120800; // The current plugin version (Date: YYYYMMDDXX
 $plugin->requires  = 2017051500; // Requires this Moodle version.
 $plugin->component = 'local_redislock'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '3.3.3';
+$plugin->release   = '3.3.6';
