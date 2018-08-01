@@ -149,6 +149,18 @@ class redis_lock_factory implements lock_factory {
         do {
             $now = time();
             try {
+                //If there is already a lock but the PID no longer exists, expire it
+                $lock_val = $this->redis->get($resource);
+                $params = null;
+                if (    $path = parse_url($lock_val)['path'] &&
+                        (parse_str($path, $params) || $params) &&
+                        (isset($params['hostname']) && $params['hostname'] == $this->get_hostname()) &&
+                        (isset($params['processid']) && ($pid = $params['processid']) && function_exists('posix_getpgid') && !posix_getpgid($pid))
+                ) {
+                    $this->redis->del($resource);
+                    $this->log('Deleted ' . $resource . ' because PID is expired');
+                }
+
                 $locked = $this->redis->setnx($resource, $this->get_lock_value());
                 $exception = false;
             } catch (\RedisException $e) {
