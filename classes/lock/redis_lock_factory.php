@@ -173,6 +173,17 @@ class redis_lock_factory implements lock_factory {
         if ($locked) {
             $this->log('Obtained '.$resource.' lock with value '.$this->get_lock_value());
 
+            try {
+                $has_timeout = $this->redis->pexpire($resource, $maxlifetime);
+                $this->log('Set ' . $resource . ' timeout with value ' . $maxlifetime);
+            } catch (\RedisException $e) {
+                $exception = $e;
+                $this->log("Could not get lock on {$resource}. Got exception while trying: {$e->getMessage()}");
+
+                $this->redis->del($resource);
+                return false;
+            }
+
             $lock = new lock($resource, $this);
             $this->openlocks[$resource] = $lock;
             return $lock;
