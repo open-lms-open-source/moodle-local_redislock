@@ -297,9 +297,18 @@ class redis_lock_factory implements lock_factory {
             throw new \coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
         }
 
+        $timeout = empty($CFG->local_redislock_redis_timeout)
+                ? null : $CFG->local_redislock_redis_timeout;
         try {
             $redis = new \Redis();
-            $redis->connect($CFG->local_redislock_redis_server);
+            if (!empty($CFG->local_redislock_persistent)) {
+                $id = empty($CFG->local_redislock_redis_persistent_id)
+                        ? null : $CFG->local_redislock_redis_persistent_id;
+                $redis->pconnect(
+                        $CFG->local_redislock_redis_server, null, $timeout, $id);
+            } else {
+                $redis->connect($CFG->local_redislock_redis_server, null, $timeout);
+            }
         } catch (\RedisException $e) {
             throw new \coding_exception("RedisException caught on host {$this->get_hostname()} with message: {$e->getMessage()}");
         }
