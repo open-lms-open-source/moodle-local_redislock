@@ -309,6 +309,9 @@ class redis_lock_factory implements lock_factory {
             } else {
                 $redis->connect($CFG->local_redislock_redis_server, null, $timeout);
             }
+            if (!empty($CFG->local_redislock_redis_auth)) {
+                $redis->auth($CFG->local_redislock_redis_auth);
+            }
         } catch (\RedisException $e) {
             throw new \coding_exception("RedisException caught on host {$this->get_hostname()} with message: {$e->getMessage()}");
         }
