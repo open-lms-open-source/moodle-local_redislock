@@ -297,6 +297,8 @@ class redis_lock_factory implements lock_factory {
             throw new \coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
         }
 
+        $port = empty($CFG->local_redislock_redis_port)
+                ? null : $CFG->local_redislock_redis_port;
         $timeout = empty($CFG->local_redislock_redis_timeout)
                 ? null : $CFG->local_redislock_redis_timeout;
         try {
@@ -305,9 +307,9 @@ class redis_lock_factory implements lock_factory {
                 $id = empty($CFG->local_redislock_redis_persistent_id)
                         ? null : $CFG->local_redislock_redis_persistent_id;
                 $redis->pconnect(
-                        $CFG->local_redislock_redis_server, null, $timeout, $id);
+                        $CFG->local_redislock_redis_server, $port, $timeout, $id);
             } else {
-                $redis->connect($CFG->local_redislock_redis_server, null, $timeout);
+                $redis->connect($CFG->local_redislock_redis_server, $port, $timeout);
             }
             if (!empty($CFG->local_redislock_redis_auth)) {
                 $redis->auth($CFG->local_redislock_redis_auth);
