@@ -136,8 +136,8 @@ class redis_lock_factory implements lock_factory {
 
         $resource = $this->type . '_' . $resource;
 
-        if (!empty($CFG->MR_SHORT_NAME)) {
-            $resource = $CFG->MR_SHORT_NAME . '_' . $resource;
+        if (!empty($CFG->local_redislock_redis_server)) {
+            $CFG->local_redislock_redis_server . '_' . $resource;
         } else {
             $resource = $CFG->dbname . '_' . $resource;
         }
