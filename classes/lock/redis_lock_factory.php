@@ -296,10 +296,16 @@ class redis_lock_factory implements lock_factory {
         if (empty($CFG->local_redislock_redis_server)) {
             throw new \coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
         }
+        if (empty($CFG->local_redislock_redis_port)) {
+            $CFG->local_redislock_redis_port = 6379;
+        }
 
         try {
             $redis = new \Redis();
-            $redis->connect($CFG->local_redislock_redis_server);
+            $redis->connect($CFG->local_redislock_redis_server, $CFG->local_redislock_redis_port);
+            if (!empty(($CFG->local_redislock_redis_auth))) {
+                $redis->auth($CFG->local_redislock_redis_auth);
+            }
         } catch (\RedisException $e) {
             throw new \coding_exception("RedisException caught on host {$this->get_hostname()} with message: {$e->getMessage()}");
         }
