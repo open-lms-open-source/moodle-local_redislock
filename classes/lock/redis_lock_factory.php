@@ -77,6 +77,11 @@ class redis_lock_factory implements lock_factory {
     private static $conncount = 0;
 
     /**
+     * @var string|null Redis password.
+     */
+    private $auth;
+
+    /**
      * @param string $type The type this lock is used for (e.g. cron, cache).
      * @param \Redis|null $redis An instance of the PHPRedis extension class.
      * @param boolean|null $logging Should verbose logs be emitted.
@@ -88,6 +93,7 @@ class redis_lock_factory implements lock_factory {
         $this->type = $type;
         $this->redisserver = $CFG->local_redislock_redis_server ?? null;
         $this->shareconnection = empty($CFG->local_redislock_disable_shared_connection);
+        $this->auth = $CFG->local_redislock_redis_auth ?? null;
         if (is_null($redis)) {
             shared_redis_connection::get_instance()->add_factory();
             $redis = $this->bootstrap_redis();
@@ -357,8 +363,19 @@ class redis_lock_factory implements lock_factory {
         }
 
         try {
+            // Default port.
+            $port = 6379;
+            $server = $this->redisserver;
+            if (strpos($this->redisserver, ':')) {
+                $serverconf = explode(':', $this->redisserver);
+                $server = $serverconf[0];
+                $port = $serverconf[1];
+            }
             $redis = new \Redis();
-            $redis->connect($this->redisserver);
+            $redis->connect($server, $port);
+            if (!empty($this->auth)) {
+                $redis->auth($this->auth);
+            }
             if ($this->shareconnection) {
                 shared_redis_connection::get_instance()->set_redis($redis); // Reusing the connection.
             } else {
