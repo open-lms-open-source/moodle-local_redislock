@@ -56,24 +56,30 @@ class redis_lock_factory implements lock_factory {
     protected $openlocks = [];
 
     /**
-     * @var boolean Enables logging
+     * @var boolean Should verbose logs be emitted.
      */
     protected $logging;
 
     /**
      * @param string $type The type this lock is used for (e.g. cron, cache).
      * @param \Redis|null $redis An instance of the PHPRedis extension class.
-     * @param boolean|null $logging Enables logging
+     * @param boolean|null $logging Should verbose logs be emitted.
      * @throws \coding_exception
      */
     public function __construct($type, \Redis $redis = null, $logging = null) {
+        global $CFG;
+
         $this->type = $type;
 
         if (is_null($redis)) {
             $redis = $this->bootstrap_redis();
         }
         if (is_null($logging)) {
-            $logging = (CLI_SCRIPT && debugging() && !PHPUNIT_TEST);
+            if (isset($CFG->local_redislock_logging)) {
+                $logging = (bool) $CFG->local_redislock_logging;
+            } else {
+                $logging = (CLI_SCRIPT && debugging() && !PHPUNIT_TEST);
+            }
         }
         $this->redis   = $redis;
         $this->logging = $logging;
