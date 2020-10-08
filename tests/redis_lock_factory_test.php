@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use core\lock\lock_config;
+use local_redislock\api\shared_redis_connection;
 
 /**
  * PHPUnit testcase class for \local_redislock\lock\redis_lock_factory.
@@ -46,6 +47,16 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
             $CFG->local_redislock_redis_server = '127.0.0.1';
         }
         $CFG->lock_factory = '\\local_redislock\\lock\\redis_lock_factory';
+    }
+
+    /**
+     * @throws coding_exception
+     */
+    protected function tearDown() {
+        shared_redis_connection::get_instance()->close();
+        while (!empty(shared_redis_connection::get_instance()->get_factory_count())) {
+            shared_redis_connection::get_instance()->remove_factory();
+        }
     }
 
     /**
@@ -187,6 +198,44 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $start = microtime(true);
         $this->assertFalse($factory->get_lock('block_conduit', 0));
         $this->assertLessThan(.5, microtime(true) - $start);
+    }
+
+    /**
+     * Tests shared connection.
+     *
+     * @throws coding_exception
+     */
+    public function test_shared_connection() {
+        if (!$this->is_redis_available()) {
+            $this->markTestSkipped('Redis server not available');
+        }
+
+        /** @var local_redislock\lock\redis_lock_factory $redislockfactory1 */
+        $redislockfactory1 = lock_config::get_lock_factory('conduit_cron');
+        $lock1 = $redislockfactory1->get_lock('shared_conn_test1', 10, 200);
+        $this->assertNotEmpty($lock1);
+        $redis1 = shared_redis_connection::get_instance()->get_redis();
+        $this->assertNotNull($redis1);
+        $lock1->release(); // All locks should be released.
+
+        /** @var local_redislock\lock\redis_lock_factory $redislockfactory2 */
+        $redislockfactory2 = lock_config::get_lock_factory('cron');
+        $lock2 = $redislockfactory2->get_lock('shared_conn_test2', 10, 200);
+        $this->assertNotEmpty($lock2);
+
+        // Simulating auto releases.
+        $redislockfactory1->auto_release(); // This should not close redis.
+
+        $redis2 = shared_redis_connection::get_instance()->get_redis();
+        $this->assertSame($redis1, $redis2);
+        $this->assertTrue($redis2->isConnected());
+
+        // Last auto-release.
+        $redislockfactory2->auto_release(); // This SHOULD close redis.
+
+        // Connection should be auto closed when Moodle shuts down (All auto-releases have run).
+        $redis3 = shared_redis_connection::get_instance()->get_redis();
+        $this->assertNull($redis3);
     }
 
     /**
