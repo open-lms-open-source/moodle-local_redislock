@@ -94,6 +94,8 @@ class redis_lock_factory implements lock_factory {
         $this->redisserver = $CFG->local_redislock_redis_server ?? null;
         $this->shareconnection = empty($CFG->local_redislock_disable_shared_connection);
         $this->auth = $CFG->local_redislock_redis_auth ?? null;
+        $this->lockretry = ($CFG->local_redislock_retry_timeout ?? 750) * 1000;
+        $this->lockretry_jitter = ($CFG->local_redislock_retry_jitter ?? 250) * 1000;
         if (is_null($redis)) {
             shared_redis_connection::get_instance()->add_factory();
             $redis = $this->bootstrap_redis();
@@ -202,7 +204,7 @@ class redis_lock_factory implements lock_factory {
             }
 
             if (!$locked && $timeout !== 0) {
-                usleep(rand(500000, 1000000)); // Sleep between 0.5 and 1 second.
+                usleep(rand($this->lockretry - $this->lockretry_jitter, $this->lockretry + $this->lockretry_jitter));
             }
         } while (!$locked && $now < $giveuptime);
 
@@ -262,7 +264,7 @@ class redis_lock_factory implements lock_factory {
                 $this->redis = $this->bootstrap_redis();
 
                 // Sleep the loop for a bit so we don't spam connections.
-                usleep(rand(500000, 1000000));
+                usleep(rand($this->lockretry - $this->lockretry_jitter, $this->lockretry + $this->lockretry_jitter));
             }
         } while ($exception);
 
