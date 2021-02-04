@@ -19,8 +19,8 @@ Set:
 
 ## Flags
 
-* Use the boolean flag `$CFG->local_redislock_logging` to control whether verbose
-logging should be emitted. If not set, logging is automatically-enabled when running
-in the CLI environment with debugging enabled on `DEBUG_NORMAL` level at least.
+* Logging is only available in the CLI environment with debugging enabled on `DEBUG_NORMAL` level at least.
+Use the boolean flag `$CFG->local_redislock_logging` to control whether verbose
+logging should be emitted. If not set, logging is automatically-enabled.
 * Use the boolean flag `$CFG->local_redislock_disable_shared_connection` to force creation
 of the redis connection for each factory instance.
