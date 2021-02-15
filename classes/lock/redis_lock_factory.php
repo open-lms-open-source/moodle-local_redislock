@@ -187,7 +187,7 @@ class redis_lock_factory implements lock_factory {
         do {
             $now = time();
             try {
-                $locked = $this->redis->setnx($resource, $this->get_lock_value());
+                $locked = $this->redis->set($resource, $this->get_lock_value(), ['nx', 'ex' => $maxlifetime]);
                 $exception = false;
             } catch (\RedisException $e) {
                 // If there has been a redis exception, we will try to reconnect.
@@ -303,7 +303,26 @@ class redis_lock_factory implements lock_factory {
      * @return boolean True if the lock was extended.
      */
     public function extend_lock(lock $lock, $maxlifetime = 86400) {
-        return false;
+        $resource = $lock->get_key();
+
+        if ($this->shareconnection) {
+            // Re-get the Redis shared connection in case it's be cleared or recreated elsewhere.
+            $this->redis = $this->bootstrap_redis();
+        }
+
+        try {
+            $extended = $this->redis->expire($resource, $maxlifetime);
+            if ($extended) {
+                $this->log('Extended '.$resource.' lock');
+            } else {
+                $this->log('Failed to extend '.$resource.' lock');
+            }
+            return $extended;
+        } catch (\RedisException $e) {
+            $this->log("Got exception while trying to extend lock: {$e->getMessage()}");
+
+            return false;
+        }
     }
 
     /**
