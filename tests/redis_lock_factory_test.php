@@ -124,7 +124,6 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_extendttl() {
-        $this->markTestSkipped("Started to fail since 3.10.1 Merge");
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
         }
@@ -135,6 +134,9 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
         $this->assertNotEmpty($lock1);
         $this->assertFalse($lock1->extend(10000));
 
+        $this->assertDebuggingCalledCount(2,
+            ['The function extend() is deprecated, please do not use it anymore.',
+            'The function extend_lock() is deprecated, please do not use it anymore.']);
         $newttl = $redislockfactory->get_ttl($lock1);
         $this->assertEquals(-1, $newttl);
 
