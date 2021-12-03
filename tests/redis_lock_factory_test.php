@@ -172,7 +172,7 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_timeout() {
-        $mockbuilder = $this->getMockBuilder('Redis')->setMethods(array('setnx'))->disableOriginalConstructor();
+        $mockbuilder = $this->getMockBuilder('Redis')->onlyMethods(array('setnx'))->disableOriginalConstructor();
         $redis = $mockbuilder->getMock();
 
         $redislockfactory = new \local_redislock\lock\redis_lock_factory('cron', $redis);
@@ -193,7 +193,7 @@ class local_redislock_redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_zero_timeout() {
-        $redis   = $this->getMockBuilder('Redis')->setMethods(array('setnx'))->disableOriginalConstructor()->getMock();
+        $redis   = $this->getMockBuilder('Redis')->onlyMethods(array('setnx'))->disableOriginalConstructor()->getMock();
         $redis->expects($this->once())->method('setnx')->will($this->returnValue(false));
 
         $factory = new \local_redislock\lock\redis_lock_factory('cron', $redis);
