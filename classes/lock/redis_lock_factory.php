@@ -25,8 +25,6 @@
 
 namespace local_redislock\lock;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core\lock\lock_factory;
 use core\lock\lock;
 use local_redislock\api\shared_redis_connection;

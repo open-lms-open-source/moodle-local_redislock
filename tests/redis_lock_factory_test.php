@@ -22,8 +22,7 @@
  * @copyright Copyright (c) 2015 Open LMS (https://www.openlms.net)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_redislock;
 
 use core\lock\lock_config;
 use local_redislock\api\shared_redis_connection;
@@ -37,7 +36,7 @@ use local_redislock\api\shared_redis_connection;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-class local_redislock_redis_lock_factory_test extends \advanced_testcase {
+class redis_lock_factory_test extends \advanced_testcase {
 
     public function setUp(): void {
         global $CFG;
