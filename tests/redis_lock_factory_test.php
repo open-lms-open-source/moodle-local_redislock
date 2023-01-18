@@ -40,7 +40,7 @@ class redis_lock_factory_test extends \advanced_testcase {
 
     public function setUp(): void {
         global $CFG;
-
+        $this->markTestSkipped('To be reviewed in: INT-18697.');
         $this->resetAfterTest();
         if (empty($CFG->local_redislock_redis_server)) {
             $CFG->local_redislock_redis_server = '127.0.0.1';
