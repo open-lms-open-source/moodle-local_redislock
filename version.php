@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 /** @var object $plugin */
-$plugin->version   = 2023041100; // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2022041900; // Requires this Moodle version.
+$plugin->version   = 2023061500; // The current plugin version (Date: YYYYMMDDXX).
+$plugin->requires  = 2022112800; // Requires this Moodle version.
 $plugin->component = 'local_redislock'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '4.0.7';
+$plugin->release   = '4.1.3';
