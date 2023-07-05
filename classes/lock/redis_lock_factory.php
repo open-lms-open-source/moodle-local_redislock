@@ -424,6 +424,6 @@ class redis_lock_factory implements lock_factory {
         return http_build_query(array(
             'hostname' => $this->get_hostname(),
             'processid' => getmypid(),
-        ), null, '&');
+        ), '', '&');
     }
 }
