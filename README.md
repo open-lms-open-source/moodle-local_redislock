@@ -19,6 +19,8 @@ Set:
   - It can also be `hostname:port` if you want to use other port different than `6379` (Default)
 * `$CFG->lock_factory` to `'\\local_redislock\\lock\\redis_lock_factory'` in your config file.
 * `$CFG->local_redislock_auth` with your Redis server's password string.
+* `$CFG->local_redislock_retry_timeout` the time in ms to sleep between attempts to claim the lock (Default: 750)
+* `$CFG->local_redislock_retry_jitter` amount of random jitter in ms to add/subtract from `$CFG->local_redislock_retry_timeout`. (Default: 250)
 
 ## Flags
 * Logging is only available in the CLI environment with debugging enabled on `DEBUG_NORMAL` level at least.
