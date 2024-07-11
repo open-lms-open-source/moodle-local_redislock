@@ -177,7 +177,6 @@ class redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_extendttl() {
-        $this->markTestSkipped('To be reviewed INT-19989');
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
         }
@@ -213,7 +212,6 @@ class redis_lock_factory_test extends \advanced_testcase {
      * @throws coding_exception
      */
     public function test_lock_autorelease() {
-        $this->markTestSkipped('To be reviewed INT-19989');
         if (!$this->is_redis_available()) {
             $this->markTestSkipped('Redis server not available');
         }
