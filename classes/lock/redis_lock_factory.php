@@ -372,8 +372,8 @@ class redis_lock_factory implements lock_factory {
             $server = $this->redisserver;
             if (strpos($this->redisserver, ':')) {
                 $serverconf = explode(':', $this->redisserver);
-                $server = $serverconf[0];
-                $port = $serverconf[1];
+                $port = array_pop($serverconf);
+                $server = join(":", $serverconf);
             }
             $redis = new \Redis();
             $redis->connect($server, $port);
