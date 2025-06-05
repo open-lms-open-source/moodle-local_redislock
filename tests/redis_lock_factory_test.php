@@ -48,7 +48,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     }
 
     /**
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     protected function tearDown(): void {
         shared_redis_connection::get_instance()->close();
@@ -60,7 +60,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests acquiring locks using the Redis lock factory.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_acquire_lock() {
         if (!$this->is_redis_available()) {
@@ -174,7 +174,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests extending a lock's TTL using Redis lock factory.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_lock_extendttl() {
         if (!$this->is_redis_available()) {
@@ -209,7 +209,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests auto_release method of the Redis lock factory.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_lock_autorelease() {
         if (!$this->is_redis_available()) {
@@ -242,7 +242,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests that timeout on acquiring lock works with Redis lock factory.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_lock_timeout() {
         $mockbuilder = $this->getMockBuilder('Redis')->onlyMethods(array('setnx'))->disableOriginalConstructor();
@@ -263,7 +263,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests that there are no retries or sleeping when the timeout is zero.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_lock_zero_timeout() {
         $redis   = $this->getMockBuilder('Redis')->onlyMethods(array('setnx'))->disableOriginalConstructor()->getMock();
@@ -279,7 +279,7 @@ class redis_lock_factory_test extends \advanced_testcase {
     /**
      * Tests shared connection.
      *
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function test_shared_connection() {
         if (!$this->is_redis_available()) {

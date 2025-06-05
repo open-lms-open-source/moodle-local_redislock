@@ -83,7 +83,7 @@ class redis_lock_factory implements lock_factory {
      * @param string $type The type this lock is used for (e.g. cron, cache).
      * @param \Redis|null $redis An instance of the PHPRedis extension class.
      * @param boolean|null $logging Should verbose logs be emitted.
-     * @throws \coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function __construct($type, \Redis $redis = null, $logging = null) {
         global $CFG;
@@ -350,7 +350,7 @@ class redis_lock_factory implements lock_factory {
      * Bootstraps a \Redis instance.
      *
      * @return \Redis
-     * @throws \coding_exception
+     * @throws \core\exception\coding_exception
      */
     protected function bootstrap_redis() {
         if (!is_null($redis = shared_redis_connection::get_instance()->get_redis())) {
@@ -359,11 +359,11 @@ class redis_lock_factory implements lock_factory {
         }
 
         if (!class_exists('Redis')) {
-            throw new \coding_exception('Redis class not found, Redis PHP Extension is probably not installed on host: '
+            throw new \core\exception\coding_exception('Redis class not found, Redis PHP Extension is probably not installed on host: '
                     . $this->get_hostname());
         }
         if (empty($this->redisserver)) {
-            throw new \coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
+            throw new \core\exception\coding_exception('Redis connection string is not configured in $CFG->local_redislock_redis_server');
         }
 
         try {
@@ -386,7 +386,7 @@ class redis_lock_factory implements lock_factory {
                 self::$conncount++;
             }
         } catch (\RedisException $e) {
-            throw new \coding_exception("RedisException caught on host {$this->get_hostname()} with message: {$e->getMessage()}");
+            throw new \core\exception\coding_exception("RedisException caught on host {$this->get_hostname()} with message: {$e->getMessage()}");
         }
 
         return $redis;

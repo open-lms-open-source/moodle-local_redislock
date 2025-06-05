@@ -120,11 +120,11 @@ class shared_redis_connection {
     }
 
     /**
-     * @throws \coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function remove_factory() {
         if (empty($this->factorycount)) {
-            throw new \coding_exception('Can\'t remove a factory, count is 0.');
+            throw new \core\exception\coding_exception('Can\'t remove a factory, count is 0.');
         }
         $this->factorycount--;
     }
