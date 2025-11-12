@@ -25,9 +25,12 @@
 
 namespace local_redislock\lock;
 
+use core\di;
+use core\exception\coding_exception;
 use core\lock\lock_factory;
 use core\lock\lock;
 use local_redislock\api\shared_redis_connection;
+use local_redislock\lock\identity_provider;
 
 /**
  * Redis-backed lock factory class.
@@ -80,12 +83,18 @@ class redis_lock_factory implements lock_factory {
     private $auth;
 
     /**
+     * @var identity_provider Identity provider service.
+     */
+    private identity_provider $identityprovider;
+
+    /**
      * @param string $type The type this lock is used for (e.g. cron, cache).
      * @param \Redis|null $redis An instance of the PHPRedis extension class.
      * @param boolean|null $logging Should verbose logs be emitted.
+     * @param identity_provider|null $identityprovider Identity provider service.
      * @throws \core\exception\coding_exception
      */
-    public function __construct($type, \Redis $redis = null, $logging = null) {
+    public function __construct($type, ?\Redis $redis = null, $logging = null, ?identity_provider $identityprovider = null) {
         global $CFG;
 
         $this->type = $type;
@@ -103,11 +112,12 @@ class redis_lock_factory implements lock_factory {
             // Logging enabled only for CLI, web gets damaged by lock logs.
             $logging = (CLI_SCRIPT && debugging() && !PHPUNIT_TEST);
             if (isset($CFG->local_redislock_logging)) {
-                $logging = $this->logging && ((bool) $CFG->local_redislock_logging);
+                $logging = $logging && ((bool) $CFG->local_redislock_logging);
             }
         }
         $this->redis   = $redis;
         $this->logging = $logging;
+        $this->identityprovider = $identityprovider ?? di::get(identity_provider::class);
 
         if (!PHPUNIT_TEST) {
             \core_shutdown_manager::register_function(array($this, 'auto_release'));
@@ -404,7 +414,7 @@ class redis_lock_factory implements lock_factory {
     }
 
     /**
-     * Returns the hostname or 'UNKNOWN' for use in the lock value.
+     * Returns the hostname or 'UNKNOWN' for logging purposes.
      *
      * @return string
      */
@@ -418,12 +428,33 @@ class redis_lock_factory implements lock_factory {
     /**
      * Get the value that should be used for the lock.
      *
-     * @return string
+     * @return string The lock value.
+     * @throws coding_exception If the identity metadata is invalid.
      */
     protected function get_lock_value() {
-        return http_build_query(array(
-            'hostname' => $this->get_hostname(),
-            'processid' => getmypid(),
-        ), '', '&');
+        $data = $this->identityprovider->build();
+        if (!is_array($data) || empty($data)) {
+            throw new coding_exception(
+                'Redis lock identity provider must return a non-empty array of metadata.',
+            );
+        }
+
+        $stringkeys = array_filter(array_keys($data), static fn($key) => is_string($key));
+        if (count($data) !== count($stringkeys)) {
+            throw new coding_exception(
+                'Redis lock identity provider keys must be strings.',
+            );
+        }
+
+        $stringvalues = array_filter(array_values($data), static fn($value) => is_string($value));
+        if (count($data) !== count($stringvalues)) {
+            throw new coding_exception(
+                'Redis lock identity provider values must be strings.',
+            );
+        }
+
+        ksort($data);
+
+        return http_build_query($data, '', '&');
     }
 }

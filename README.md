@@ -27,6 +27,41 @@ logging should be emitted. If not set, logging is automatically-enabled.
 * Use the boolean flag `$CFG->local_redislock_disable_shared_connection` to force creation
 of the redis connection for each factory instance.
 
+## Customising the lock identity payload
+The value stored alongside each Redis lock is produced by an `identity_provider` service. By default it records the hostname and the current PHP process ID, but you can override the DI binding to record whatever metadata you need (for example an AWS ARN, container identifier).
+
+Registering an override inside another plugin via **local/my_plugin/classes/hook_callbacks.php**:
+
+```php
+namespace local_my_plugin
+
+class hook_callbacks {
+    public static function di_configuration(\core\hook\di_configuration $hook): void {
+        $hook->add_definition(
+            \local_redislock\lock\identity_provider::class,
+            \DI\autowire(\local_yourplugin\lock\arn_identity_provider::class),
+        );
+    }
+}
+```
+
+Because local_redislock registers its DI callback with priority 999, any plugin using the default priority (100) will run afterwards and automatically overwrite the binding without extra effort.
+
+### Override via config.php
+If it's ever needed to restore the default identity provider or change priorities without touching code, hook priorities can be adjusted via **config.php**:
+
+```php
+$CFG->hooks_callback_overrides = [
+    \core\hook\di_configuration::class => [
+        '\local_redislock\hook_callbacks::di_configuration' => [
+            'priority' => 0, // Ensure redislock runs last, restoring the default identity provider.
+        ],
+    ],
+];
+```
+
+Setting `'disabled' => true` for another plugin's callback will stop it from overriding the provider entirely.
+
 ## License
 Copyright (c) 2021 Open LMS (https://www.openlms.net)
 
