@@ -81,11 +81,11 @@ class redis_lock_factory implements lock_factory {
 
     /**
      * @param string $type The type this lock is used for (e.g. cron, cache).
-     * @param \Redis|null $redis An instance of the PHPRedis extension class.
+     * @param ?\Redis $redis An instance of the PHPRedis extension class.
      * @param boolean|null $logging Should verbose logs be emitted.
      * @throws \core\exception\coding_exception
      */
-    public function __construct($type, \Redis $redis = null, $logging = null) {
+    public function __construct($type, ?\Redis $redis = null, $logging = null) {
         global $CFG;
 
         $this->type = $type;
